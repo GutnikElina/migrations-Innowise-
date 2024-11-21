@@ -1,5 +1,4 @@
 import config.ConnectionManager;
-import config.PropertiesUtils;
 import lombok.extern.slf4j.Slf4j;
 import migrations.MigrationManager;
 import java.sql.Connection;
@@ -9,11 +8,9 @@ public class MigrationTool {
 
     public static void main(String[] args) {
         try {
-            String propertiesPath = "application.properties";
-            PropertiesUtils propertiesUtils = new PropertiesUtils(propertiesPath);
-            ConnectionManager connectionManager = new ConnectionManager(propertiesUtils);
+            ConnectionManager.testConnection();
 
-            try (Connection connection = connectionManager.getConnection()) {
+            try (Connection connection = ConnectionManager.getConnection()) {
                 MigrationManager migrationManager = new MigrationManager(connection);
                 migrationManager.runMigrations();
             }
