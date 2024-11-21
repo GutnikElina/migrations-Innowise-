@@ -72,7 +72,8 @@ public class MigrationManager {
             for (String file : migrationFiles) {
                 if (!isMigrationApplied(file)) {
                     log.info("Применение миграции: {}", file);
-                    String sql = fileReader.readMigrationFile(file);
+                    String filePath = "migrations/"+ file;
+                    String sql = fileReader.readMigrationFile(filePath);
                     applyMigration(file, sql);
                 }
             }

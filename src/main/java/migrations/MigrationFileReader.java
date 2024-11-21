@@ -39,6 +39,7 @@ public class MigrationFileReader {
     }
 
     public String readMigrationFile(String filePath) throws Exception {
+        System.out.println(filePath);
         try (InputStream in = getClass().getClassLoader().getResourceAsStream(filePath);
              BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
             if (in == null) throw new RuntimeException("Файл миграции не найден: " + filePath);
