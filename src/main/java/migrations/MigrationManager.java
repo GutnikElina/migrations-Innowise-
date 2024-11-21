@@ -1,6 +1,8 @@
 package migrations;
 
 import lombok.extern.slf4j.Slf4j;
+
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -10,6 +12,13 @@ import java.util.List;
 public class MigrationManager {
 
     private static final String MIGRATION_TABLE = "migration_history";
+    private static final String CREATE_TABLE_SQL = """
+        CREATE TABLE IF NOT EXISTS migration_history (
+            id SERIAL PRIMARY KEY,
+            file_name VARCHAR(255) NOT NULL UNIQUE,
+            applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """;
     private final Connection connection;
     private final MigrationExecutor executor;
 
@@ -34,20 +43,19 @@ public class MigrationManager {
                     applyMigration(file, sql);
                 }
             }
+        } catch (SQLException e) {
+            log.error("Ошибка SQL во время миграции: {}", e.getMessage(), e);
+            throw e;
+        } catch (IOException e) {
+            log.error("Ошибка чтения файла миграции: {}", e.getMessage(), e);
+            throw e;
         } finally {
             releaseLock();
         }
     }
 
     private void ensureMigrationTableExists() throws SQLException {
-        String createTableSql = """
-            CREATE TABLE IF NOT EXISTS migration_history (
-                id SERIAL PRIMARY KEY,
-                file_name VARCHAR(255) NOT NULL UNIQUE,
-                applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-            """;
-        executor.execute(createTableSql);
+        executor.execute(CREATE_TABLE_SQL);
         log.info("Миграционная таблица проверена/создана.");
     }
 
@@ -70,16 +78,23 @@ public class MigrationManager {
         } catch (SQLException e) {
             log.error("Не удалось применить миграцию: {}", fileName, e);
             throw e;
+        } catch (NullPointerException e) {
+            log.error("Не удалось применить миграцию: {}. Объект был null.", fileName, e);
+            throw e;
         }
     }
 
     private void acquireLock() throws SQLException {
         String tryLockSql = "SELECT pg_try_advisory_lock(1)";
+        //pg_try_advisory_lock(1) - получает исключительную блокировку на уровне сеанса, если это возможно
+        //true - если блокировка захвачена
+        //false - блокировка занята
         log.info("Начало попытки приобретения блокировки...");
         try (var stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(tryLockSql)) {
             if (rs.next() && !rs.getBoolean(1)) {
-                log.error("Не удалось получить блокировку для миграций. Возможно, миграции уже выполняются другим процессом.");
+                log.warn("Не удалось получить блокировку для миграций. Возможно, миграции уже выполняются " +
+                        "другим процессом.");
                 throw new IllegalStateException("Миграции уже выполняются. Повторите попытку позже.");
             }
         }

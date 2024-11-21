@@ -16,7 +16,7 @@ public class ConnectionManager {
         try {
             Class.forName("org.postgresql.Driver");
         } catch (ClassNotFoundException e) {
-            log.error("Ошибка при регистрации драйвера PostgreSQL: ", e);
+            log.error("Драйвер PostgreSQL не найден: ", e);
             throw new RuntimeException("Ошибка при регистрации драйвера PostgreSQL", e);
         }
     }
@@ -28,7 +28,7 @@ public class ConnectionManager {
             log.info("Соединение с базой данных установлено.");
             return connection;
         } catch (SQLException e) {
-            log.error("Ошибка при подключении к базе данных: {}", e.getMessage(), e);
+            log.error("Ошибка подключения: URL={}; пользователь={} ", url, username, e);
             throw e;
         }
     }
@@ -38,7 +38,7 @@ public class ConnectionManager {
             if (connection.isValid(5)) {
                 log.info("Тест соединения с базой данных успешно выполнен.");
             } else {
-                throw new SQLException("Соединение с базой данных недействительно.");
+                throw new SQLException("Соединение с базой данных не выполняется успешно");
             }
         }
     }

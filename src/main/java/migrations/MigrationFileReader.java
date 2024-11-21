@@ -2,6 +2,7 @@ package migrations;
 
 import lombok.extern.slf4j.Slf4j;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
@@ -38,11 +39,17 @@ public class MigrationFileReader {
         return Integer.compare(version1, version2);
     }
 
-    public String readMigrationFile(String filePath) throws Exception {
+    public String readMigrationFile(String filePath) throws IOException {
         try (InputStream in = getClass().getClassLoader().getResourceAsStream(filePath);
              BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-            if (in == null) throw new RuntimeException("Файл миграции не найден: " + filePath);
+            if (in == null) {
+                log.error("Файл миграции не найден: {}", filePath);
+                throw new IOException("Файл миграции отсутствует: " + filePath);
+            }
             return reader.lines().collect(Collectors.joining("\n"));
+        } catch (IOException e) {
+            log.error("Ошибка чтения файла миграции: {}", filePath, e);
+            throw new IOException("Ошибка при чтении файла миграции " + filePath, e);
         }
     }
 }
