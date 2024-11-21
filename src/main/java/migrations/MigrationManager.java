@@ -19,7 +19,27 @@ public class MigrationManager {
         log.debug("MigrationManager создан.");
     }
 
-    private void ensureMigrationTableExists() throws Exception {
+    public void runMigrations() throws Exception {
+        try {
+            acquireLock();
+            ensureMigrationTableExists();
+
+            MigrationFileReader fileReader = new MigrationFileReader();
+            List<String> migrationFiles = fileReader.findMigrationFiles("migrations");
+            for (String file : migrationFiles) {
+                if (!isMigrationApplied(file)) {
+                    String filePath = "migrations/" + file;
+                    log.info("Применение миграции: {}", file);
+                    String sql = fileReader.readMigrationFile(filePath);
+                    applyMigration(file, sql);
+                }
+            }
+        } finally {
+            releaseLock();
+        }
+    }
+
+    private void ensureMigrationTableExists() throws SQLException {
         String createTableSql = "CREATE TABLE IF NOT EXISTS " + MIGRATION_TABLE + " (" +
                 "id SERIAL PRIMARY KEY, " +
                 "file_name VARCHAR(255) NOT NULL UNIQUE, " +
@@ -52,33 +72,15 @@ public class MigrationManager {
 
     private void acquireLock() throws SQLException {
         String lockSql = "SELECT pg_advisory_lock(1)";
+        log.info("Начало приобретения блокировки...");
         executor.execute(lockSql);
         log.info("Блокировка для миграций приобретена.");
     }
 
     private void releaseLock() throws SQLException {
         String unlockSql = "SELECT pg_advisory_unlock(1)";
+        log.info("Начало освобождения блокировки...");
         executor.execute(unlockSql);
         log.info("Блокировка для миграций освобождена.");
-    }
-
-    public void runMigrations() throws Exception {
-        try {
-            acquireLock();
-            ensureMigrationTableExists();
-
-            MigrationFileReader fileReader = new MigrationFileReader();
-            List<String> migrationFiles = fileReader.findMigrationFiles("migrations");
-            for (String file : migrationFiles) {
-                if (!isMigrationApplied(file)) {
-                    String filePath = "migrations/" + file;
-                    log.info("Применение миграции: {}", file);
-                    String sql = fileReader.readMigrationFile(filePath);
-                    applyMigration(file, sql);
-                }
-            }
-        } finally {
-            releaseLock();
-        }
     }
 }

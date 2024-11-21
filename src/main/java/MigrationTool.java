@@ -7,6 +7,7 @@ import java.sql.Connection;
 public class MigrationTool {
 
     public static void main(String[] args) {
+
         try {
             ConnectionManager.testConnection();
 
