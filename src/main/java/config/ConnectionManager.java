@@ -23,7 +23,7 @@ public class ConnectionManager {
 
     public static Connection getConnection() throws SQLException {
         try {
-            log.debug("Создание соединения с базой данных...");
+            log.debug("Соединение с базой данных...");
             Connection connection = DriverManager.getConnection(url, username, password);
             log.info("Соединение с базой данных установлено.");
             return connection;

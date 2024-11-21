@@ -10,8 +10,8 @@ import java.sql.SQLException;
 @AllArgsConstructor
 public class MigrationExecutor {
 
-    private final Connection connection;
     private static final String MIGRATION_TABLE = "migration_history";
+    private final Connection connection;
 
     public void execute(String sql) throws SQLException {
         boolean initialAutoCommit = connection.getAutoCommit();

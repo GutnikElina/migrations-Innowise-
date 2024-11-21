@@ -1,6 +1,7 @@
 import config.ConnectionManager;
 import lombok.extern.slf4j.Slf4j;
 import migrations.MigrationManager;
+
 import java.sql.Connection;
 
 @Slf4j
@@ -15,6 +16,8 @@ public class MigrationTool {
                 MigrationManager migrationManager = new MigrationManager(connection);
                 migrationManager.runMigrations();
             }
+        } catch (IllegalAccessException e) {
+            log.warn("Миграции не были запущены: {}", e.getMessage());
         } catch (Exception e) {
             log.error("Ошибка при выполнении миграции", e);
         }

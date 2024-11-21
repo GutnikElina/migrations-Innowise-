@@ -20,8 +20,8 @@ public class MigrationManager {
     }
 
     public void runMigrations() throws Exception {
+        acquireLock();
         try {
-            acquireLock();
             ensureMigrationTableExists();
 
             MigrationFileReader fileReader = new MigrationFileReader();
@@ -40,10 +40,13 @@ public class MigrationManager {
     }
 
     private void ensureMigrationTableExists() throws SQLException {
-        String createTableSql = "CREATE TABLE IF NOT EXISTS " + MIGRATION_TABLE + " (" +
-                "id SERIAL PRIMARY KEY, " +
-                "file_name VARCHAR(255) NOT NULL UNIQUE, " +
-                "applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)";
+        String createTableSql = """
+            CREATE TABLE IF NOT EXISTS migration_history (
+                id SERIAL PRIMARY KEY,
+                file_name VARCHAR(255) NOT NULL UNIQUE,
+                applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """;
         executor.execute(createTableSql);
         log.info("Миграционная таблица проверена/создана.");
     }
@@ -71,16 +74,27 @@ public class MigrationManager {
     }
 
     private void acquireLock() throws SQLException {
-        String lockSql = "SELECT pg_advisory_lock(1)";
-        log.info("Начало приобретения блокировки...");
-        executor.execute(lockSql);
-        log.info("Блокировка для миграций приобретена.");
+        String tryLockSql = "SELECT pg_try_advisory_lock(1)";
+        log.info("Начало попытки приобретения блокировки...");
+        try (var stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(tryLockSql)) {
+            if (rs.next() && !rs.getBoolean(1)) {
+                log.error("Не удалось получить блокировку для миграций. Возможно, миграции уже выполняются другим процессом.");
+                throw new IllegalStateException("Миграции уже выполняются. Повторите попытку позже.");
+            }
+        }
+        log.info("Блокировка для миграций успешно приобретена.");
     }
 
     private void releaseLock() throws SQLException {
         String unlockSql = "SELECT pg_advisory_unlock(1)";
-        log.info("Начало освобождения блокировки...");
-        executor.execute(unlockSql);
-        log.info("Блокировка для миграций освобождена.");
+        try (var stmt = connection.createStatement()) {
+            log.info("Начало попытки освобождения блокировки...");
+            stmt.execute(unlockSql);
+            log.info("Блокировка для миграций успешно освобождена.");
+        } catch (SQLException e) {
+            log.error("Ошибка при освобождении блокировки: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 }
