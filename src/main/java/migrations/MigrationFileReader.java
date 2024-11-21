@@ -1,5 +1,6 @@
 package migrations;
 
+import lombok.extern.slf4j.Slf4j;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -9,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class MigrationFileReader {
 
     public List<String> findMigrationFiles(String path) throws Exception {
@@ -26,6 +28,7 @@ public class MigrationFileReader {
         }
 
         migrationFiles.sort(this::compareVersions);
+        log.debug("Найдено {} миграционных файлов.", migrationFiles.size());
         return migrationFiles;
     }
 
