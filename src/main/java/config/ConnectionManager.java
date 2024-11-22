@@ -5,6 +5,10 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+/**
+ * Класс для управления соединениями с базой данных.
+ * Он предоставляет методы для получения соединения с базой данных и тестирования соединения
+ */
 @Slf4j
 public class ConnectionManager {
 
@@ -14,6 +18,9 @@ public class ConnectionManager {
 
     static {
         try {
+            // Регистрируем драйвер вручную (несмотря на то,
+            // что есть зависимость в pom.xml) для совместимости с более
+            // старыми версиями Java или специфическими контейнерами
             Class.forName("org.postgresql.Driver");
         } catch (ClassNotFoundException e) {
             log.error("Драйвер PostgreSQL не найден: ", e);
@@ -21,6 +28,12 @@ public class ConnectionManager {
         }
     }
 
+    /**
+     * Получает соединение с базой данных.
+     *
+     * @return объект {@link Connection} для взаимодействия с базой данных.
+     * @throws SQLException если не удалось установить соединение с базой данных.
+     */
     public static Connection getConnection() throws SQLException {
         try {
             log.debug("Соединение с базой данных...");
@@ -33,6 +46,12 @@ public class ConnectionManager {
         }
     }
 
+    /**
+     * Тестирует соединение с базой данных.
+     * Попытка установить соединение с базой и проверить его валидность.
+     *
+     * @throws SQLException если соединение не удалось установить или оно невалидно.
+     */
     public static void testConnection() throws SQLException {
         try (Connection connection = getConnection()) {
             if (connection.isValid(5)) {

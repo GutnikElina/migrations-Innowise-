@@ -5,11 +5,20 @@ import migrations.MigrationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+/**
+ * Главный класс для выполнения миграций, который инициирует соединение с базой данных
+ * и запускает процесс миграции
+ */
 @Slf4j
 public class MigrationTool {
 
+    /**
+     * Точка входа для запуска миграций.
+     * Осуществляет подключение к базе данных и запускает миграции
+     *
+     * @param args аргументы командной строки
+     */
     public static void main(String[] args) {
-
         try {
             ConnectionManager.testConnection();
 

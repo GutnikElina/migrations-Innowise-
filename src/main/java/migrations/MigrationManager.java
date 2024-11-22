@@ -8,6 +8,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+/**
+ * Класс, управляющий процессом миграции базы данных.
+ * Он обрабатывает выполнение миграций, создает таблицу для отслеживания миграций,
+ * а также управляет блокировками для предотвращения параллельного выполнения миграций
+ */
 @Slf4j
 public class MigrationManager {
 
@@ -22,12 +27,23 @@ public class MigrationManager {
     private final Connection connection;
     private final MigrationExecutor executor;
 
+    /**
+     * Конструктор для инициализации менеджера миграции с использованием соединения с базой данных
+     *
+     * @param connection соединение с базой данных
+     */
     public MigrationManager(Connection connection) {
         this.connection = connection;
         this.executor = new MigrationExecutor(connection);
         log.debug("MigrationManager создан.");
     }
 
+    /**
+     * Запускает все миграции, проверяя, были ли они уже применены.
+     * Обрабатывает создание таблицы миграции и выполнение миграций для каждого файла
+     *
+     * @throws Exception если возникает ошибка при применении миграций
+     */
     public void runMigrations() throws Exception {
         acquireLock();
         try {
