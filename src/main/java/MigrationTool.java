@@ -19,13 +19,40 @@ public class MigrationTool {
      * @param args аргументы командной строки
      */
     public static void main(String[] args) {
+        if (args.length == 0) {
+            log.error("Не указана команда. Доступные команды: migrate, rollback, status");
+            return;
+        }
+
         try {
             ConnectionManager.testConnection();
 
             try (Connection connection = ConnectionManager.getConnection()) {
                 MigrationManager migrationManager = new MigrationManager(connection);
-                migrationManager.runMigrations();
+                String command = args[0];
+
+                switch (command) {
+                    case "migrate":
+                        log.info("Запуск миграций...");
+                        migrationManager.runMigrations();
+                        break;
+
+                    case "rollback":
+                        log.info("Откат миграций...");
+                        migrationManager.rollbackMigration();
+                        break;
+
+                    case "status":
+                        log.info("Проверка статуса миграций...");
+                        migrationManager.printMigrationStatus();
+                        break;
+
+                    default:
+                        log.error("Неизвестная команда: {}. Доступные команды: migrate, rollback, status", command);
+                        break;
+                }
             }
+            log.info("Работа с миграциями успешно завершена!");
         } catch (SQLException e) {
             log.error("Ошибка при работе с базой данных: {}", e.getMessage(), e);
         } catch (IllegalAccessException e) {

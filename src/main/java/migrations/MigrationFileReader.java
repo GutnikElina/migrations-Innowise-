@@ -55,8 +55,7 @@ public class MigrationFileReader {
             try (var files = Files.walk(Paths.get(url.toURI()))) {
                 migrationFiles.addAll(files.filter(Files::isRegularFile)
                         .map(file -> file.getFileName().toString())
-                        .filter(f -> f.matches("V\\d+.*\\.sql"))
-                        .toList());
+                        .filter(f -> f.matches("V\\d+.*\\.sql")).toList());
             }
         }
         migrationFiles.sort(this::compareVersions);

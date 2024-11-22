@@ -70,6 +70,61 @@ public class MigrationManager {
         }
     }
 
+    /**
+     * Выводит в лог статус всех миграций, примененных к базе данных.
+     * Каждая запись содержит название файла миграции и дату/время ее применения
+     *
+     * @throws SQLException если возникает ошибка при выполнении SQL-запроса
+     */
+    public void printMigrationStatus() throws SQLException {
+        String query = "SELECT file_name, applied_at FROM " + MIGRATION_TABLE + " ORDER BY applied_at DESC";
+        try (var stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
+            log.info("Статус миграций:");
+            while (rs.next()) {
+                log.info("Миграция: {}; время применения: {}", rs.getString("file_name"), rs.getTimestamp("applied_at"));
+            }
+        }
+    }
+
+    /**
+     * Выполняет откат последней примененной миграции. Находит последнюю
+     * примененную миграцию, ищет соответствующий файл отката и выполняет его.
+     * Удаляет запись о последней миграции из таблицы истории миграций.
+     *
+     * @throws SQLException если возникает ошибка при выполнении SQL-запроса или отката
+     */
+    public void rollbackMigration() throws SQLException {
+        String lastAppliedMigration = getLastAppliedMigration();
+        if (lastAppliedMigration == null) {
+            log.warn("Нет миграций для отката.");
+            return;
+        }
+
+        String rollbackFile = lastAppliedMigration.replaceFirst("^V", "U");
+        String rollbackFilePath = "migrations/" + rollbackFile;
+
+        try {
+            MigrationFileReader fileReader = new MigrationFileReader();
+            log.info("Чтение файла для отката миграции: {}", rollbackFile);
+            String rollbackSql = fileReader.readMigrationFile(rollbackFilePath);
+
+            executor.execute(rollbackSql);
+
+            String deleteSql = "DELETE FROM " + MIGRATION_TABLE + " WHERE file_name = ?";
+            try (var pstmt = connection.prepareStatement(deleteSql)) {
+                pstmt.setString(1, lastAppliedMigration);
+                pstmt.executeUpdate();
+            }
+            log.info("Откат последней миграции выполнен: {}", lastAppliedMigration);
+        } catch (IOException e) {
+            log.error("Файл отката для миграции {} не найден: {}", lastAppliedMigration, rollbackFilePath, e);
+            throw new SQLException("Не удалось найти файл отката: " + rollbackFilePath, e);
+        } catch (SQLException e) {
+            log.error("Ошибка при выполнении отката для миграции {}: {}", lastAppliedMigration, rollbackFilePath, e);
+            throw e;
+        }
+    }
+
     private void ensureMigrationTableExists() throws SQLException {
         executor.execute(CREATE_TABLE_SQL);
         log.info("Миграционная таблица проверена/создана.");
@@ -127,5 +182,15 @@ public class MigrationManager {
             log.error("Ошибка при освобождении блокировки: {}", e.getMessage(), e);
             throw e;
         }
+    }
+
+    private String getLastAppliedMigration() throws SQLException {
+        String query = "SELECT file_name FROM " + MIGRATION_TABLE + " ORDER BY applied_at DESC LIMIT 1";
+        try (var stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
+            if (rs.next()) {
+                return rs.getString("file_name");
+            }
+        }
+        return null;
     }
 }
