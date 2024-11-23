@@ -1,4 +1,4 @@
-package config;
+package com.library.config;
 
 import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
@@ -19,14 +19,14 @@ public class PropertiesUtils {
             String propertiesPath = "application.properties";
             try (InputStream input = PropertiesUtils.class.getClassLoader().getResourceAsStream(propertiesPath)) {
                 if (input == null) {
-                    throw new IOException("Файл конфигурации не найден в ресурсах: " + propertiesPath);
+                    throw new IOException("Configuration file not found in resources: " + propertiesPath);
                 }
                 properties.load(input);
-                log.info("Конфигурация загружена из ресурса: {}", propertiesPath);
+                log.info("Configuration loaded from resource: {}", propertiesPath);
             }
         } catch (IOException e) {
-            log.error("Ошибка загрузки конфигурации: ", e);
-            throw new RuntimeException("Ошибка загрузки конфигурации", e);
+            log.error("Configuration loading error: ", e);
+            throw new RuntimeException("Error loading configuration", e);
         }
     }
 

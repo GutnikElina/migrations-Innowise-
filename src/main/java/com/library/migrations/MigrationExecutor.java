@@ -1,4 +1,4 @@
-package migrations;
+package com.library.migrations;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,10 +29,10 @@ public class MigrationExecutor {
             connection.setAutoCommit(false);
             stmt.execute(sql);
             connection.commit();
-            log.info("SQL-запрос успешно выполнен: {}", sql);
+            log.info("SQL query executed successfully: {}", sql);
         } catch (SQLException e) {
             connection.rollback();
-            log.error("Ошибка при выполнении SQL-запроса: {}", sql, e);
+            log.error("Error executing SQL query: {}", sql, e);
             throw e;
         } finally {
             connection.setAutoCommit(initialAutoCommit);
@@ -50,7 +50,7 @@ public class MigrationExecutor {
         try (var pstmt = connection.prepareStatement(logSql)) {
             pstmt.setString(1, migrationFileName);
             pstmt.executeUpdate();
-            log.info("Миграция {} зафиксирована в базе данных", migrationFileName);
+            log.info("Migration {} recorded in the database", migrationFileName);
         }
     }
 }

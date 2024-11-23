@@ -1,4 +1,4 @@
-package migrations;
+package com.library.migrations;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,7 +35,7 @@ public class MigrationManager {
     public MigrationManager(Connection connection) {
         this.connection = connection;
         this.executor = new MigrationExecutor(connection);
-        log.debug("MigrationManager создан.");
+        log.debug("MigrationManager created.");
     }
 
     /**
@@ -54,16 +54,16 @@ public class MigrationManager {
             for (String file : migrationFiles) {
                 if (!isMigrationApplied(file)) {
                     String filePath = "migrations/" + file;
-                    log.info("Применение миграции: {}", file);
+                    log.info("Applying migration: {}", file);
                     String sql = fileReader.readMigrationFile(filePath);
                     applyMigration(file, sql);
                 }
             }
         } catch (SQLException e) {
-            log.error("Ошибка SQL во время миграции: {}", e.getMessage(), e);
+            log.error("Error SQL during migration: {}", e.getMessage(), e);
             throw e;
         } catch (IOException e) {
-            log.error("Ошибка чтения файла миграции: {}", e.getMessage(), e);
+            log.error("Error reading migration file: {}", e.getMessage(), e);
             throw e;
         } finally {
             releaseLock();
@@ -79,9 +79,9 @@ public class MigrationManager {
     public void printMigrationStatus() throws SQLException {
         String query = "SELECT file_name, applied_at FROM " + MIGRATION_TABLE + " ORDER BY applied_at DESC";
         try (var stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
-            log.info("Статус миграций:");
+            log.info("Migration status:");
             while (rs.next()) {
-                log.info("Миграция: {}; время применения: {}", rs.getString("file_name"), rs.getTimestamp("applied_at"));
+                log.info("Migration: {}; applied at: {}", rs.getString("file_name"), rs.getTimestamp("applied_at"));
             }
         }
     }
@@ -96,7 +96,7 @@ public class MigrationManager {
     public void rollbackMigration() throws SQLException {
         String lastAppliedMigration = getLastAppliedMigration();
         if (lastAppliedMigration == null) {
-            log.warn("Нет миграций для отката.");
+            log.warn("No migrations to roll back.");
             return;
         }
 
@@ -105,7 +105,7 @@ public class MigrationManager {
 
         try {
             MigrationFileReader fileReader = new MigrationFileReader();
-            log.info("Чтение файла для отката миграции: {}", rollbackFile);
+            log.info("Reading rollback file for migration: {}", rollbackFile);
             String rollbackSql = fileReader.readMigrationFile(rollbackFilePath);
 
             executor.execute(rollbackSql);
@@ -115,19 +115,19 @@ public class MigrationManager {
                 pstmt.setString(1, lastAppliedMigration);
                 pstmt.executeUpdate();
             }
-            log.info("Откат последней миграции выполнен: {}", lastAppliedMigration);
+            log.info("Rollback of the last migration performed: {}", lastAppliedMigration);
         } catch (IOException e) {
-            log.error("Файл отката для миграции {} не найден: {}", lastAppliedMigration, rollbackFilePath, e);
-            throw new SQLException("Не удалось найти файл отката: " + rollbackFilePath, e);
+            log.error("Rollback file for migration {} not found: {}", lastAppliedMigration, rollbackFilePath, e);
+            throw new SQLException("Couldn't find rollback file: " + rollbackFilePath, e);
         } catch (SQLException e) {
-            log.error("Ошибка при выполнении отката для миграции {}: {}", lastAppliedMigration, rollbackFilePath, e);
+            log.error("Error executing rollback for migration {}: {}", lastAppliedMigration, rollbackFilePath, e);
             throw e;
         }
     }
 
     private void ensureMigrationTableExists() throws SQLException {
         executor.execute(CREATE_TABLE_SQL);
-        log.info("Миграционная таблица проверена/создана.");
+        log.info("Migration table checked/created");
     }
 
     private boolean isMigrationApplied(String fileName) throws SQLException {
@@ -136,7 +136,7 @@ public class MigrationManager {
              ResultSet rs = stmt.executeQuery(query)) {
             rs.next();
             boolean applied = rs.getInt(1) > 0;
-            log.debug("Миграция {} применена: {}", fileName, applied);
+            log.debug("Migration {} applied: {}", fileName, applied);
             return applied;
         }
     }
@@ -145,12 +145,12 @@ public class MigrationManager {
         try {
             executor.execute(sql);
             executor.logMigration(fileName);
-            log.info("Миграция {} применена.", fileName);
+            log.info("Migration {} applied.", fileName);
         } catch (SQLException e) {
-            log.error("Не удалось применить миграцию: {}", fileName, e);
+            log.error("Failed to apply migration: {}", fileName, e);
             throw e;
         } catch (NullPointerException e) {
-            log.error("Не удалось применить миграцию: {}. Объект был null.", fileName, e);
+            log.error("Attempting to rollback migration: {}. Object was null.", fileName, e);
             throw e;
         }
     }
@@ -160,26 +160,25 @@ public class MigrationManager {
         //pg_try_advisory_lock(1) - получает исключительную блокировку на уровне сеанса, если это возможно
         //true - если блокировка захвачена
         //false - блокировка занята
-        log.info("Начало попытки приобретения блокировки...");
+        log.info("Starting attempt to acquire lock...");
         try (var stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(tryLockSql)) {
             if (rs.next() && !rs.getBoolean(1)) {
-                log.warn("Не удалось получить блокировку для миграций. Возможно, миграции уже выполняются " +
-                        "другим процессом.");
-                throw new IllegalStateException("Миграции уже выполняются. Повторите попытку позже.");
+                log.warn("Failed to acquire lock for migrations. Possibly, migrations are already running by another process.");
+                throw new IllegalStateException("Migrations are already running. Please try again later");
             }
         }
-        log.info("Блокировка для миграций успешно приобретена.");
+        log.info("Lock acquired successfully for migrations.");
     }
 
     private void releaseLock() throws SQLException {
         String unlockSql = "SELECT pg_advisory_unlock(1)";
         try (var stmt = connection.createStatement()) {
-            log.info("Начало попытки освобождения блокировки...");
+            log.info("Starting attempt to release lock...");
             stmt.execute(unlockSql);
-            log.info("Блокировка для миграций успешно освобождена.");
+            log.info("Lock successfully released.");
         } catch (SQLException e) {
-            log.error("Ошибка при освобождении блокировки: {}", e.getMessage(), e);
+            log.error("Error releasing lock: {}", e.getMessage(), e);
             throw e;
         }
     }

@@ -1,4 +1,4 @@
-package config;
+package com.library.config;
 
 import lombok.extern.slf4j.Slf4j;
 import java.sql.Connection;
@@ -23,8 +23,8 @@ public class ConnectionManager {
             // старыми версиями Java или специфическими контейнерами
             Class.forName("org.postgresql.Driver");
         } catch (ClassNotFoundException e) {
-            log.error("Драйвер PostgreSQL не найден: ", e);
-            throw new RuntimeException("Ошибка при регистрации драйвера PostgreSQL", e);
+            log.error("Driver PostgreSQL not found: ", e);
+            throw new RuntimeException("Error registering PostgreSQL driver", e);
         }
     }
 
@@ -36,12 +36,12 @@ public class ConnectionManager {
      */
     public static Connection getConnection() throws SQLException {
         try {
-            log.debug("Соединение с базой данных...");
+            log.debug("Connecting to the database...");
             Connection connection = DriverManager.getConnection(url, username, password);
-            log.info("Соединение с базой данных установлено.");
+            log.info("Database connection established.");
             return connection;
         } catch (SQLException e) {
-            log.error("Ошибка подключения: URL={}; пользователь={} ", url, username, e);
+            log.error("Connection error: URL={}; user={}", url, username, e);
             throw e;
         }
     }
@@ -55,9 +55,9 @@ public class ConnectionManager {
     public static void testConnection() throws SQLException {
         try (Connection connection = getConnection()) {
             if (connection.isValid(5)) {
-                log.info("Тест соединения с базой данных успешно выполнен.");
+                log.info("Database connection test passed.");
             } else {
-                throw new SQLException("Соединение с базой данных не выполняется успешно");
+                throw new SQLException("Database connection wasn't successful.");
             }
         }
     }

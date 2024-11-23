@@ -1,4 +1,4 @@
-package migrations;
+package com.library.migrations;
 
 import lombok.extern.slf4j.Slf4j;
 import java.io.BufferedReader;
@@ -29,13 +29,13 @@ public class MigrationFileReader {
         try (InputStream in = getClass().getClassLoader().getResourceAsStream(filePath);
              BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
             if (in == null) {
-                log.error("Файл миграции не найден: {}", filePath);
-                throw new IOException("Файл миграции отсутствует: " + filePath);
+                log.error("Migration file not found: {}", filePath);
+                throw new IOException("Migration file not found: " + filePath);
             }
             return reader.lines().collect(Collectors.joining("\n"));
         } catch (IOException e) {
-            log.error("Ошибка чтения файла миграции: {}", filePath, e);
-            throw new IOException("Ошибка при чтении файла миграции " + filePath, e);
+            log.error("Error reading migration file: {}", filePath, e);
+            throw new IOException("Error reading migration file " + filePath, e);
         }
     }
 
@@ -59,7 +59,7 @@ public class MigrationFileReader {
             }
         }
         migrationFiles.sort(this::compareVersions);
-        log.debug("Найдено {} миграционных файлов.", migrationFiles.size());
+        log.debug("Found {} migration files.", migrationFiles.size());
         return migrationFiles;
     }
 

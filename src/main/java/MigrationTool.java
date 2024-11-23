@@ -1,6 +1,6 @@
-import config.ConnectionManager;
+import com.library.config.ConnectionManager;
 import lombok.extern.slf4j.Slf4j;
-import migrations.MigrationManager;
+import com.library.migrations.MigrationManager;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -20,7 +20,7 @@ public class MigrationTool {
      */
     public static void main(String[] args) {
         if (args.length == 0) {
-            log.error("Не указана команда. Доступные команды: migrate, rollback, status");
+            log.error("No command specified. Available commands: migrate, rollback, status");
             return;
         }
 
@@ -33,34 +33,34 @@ public class MigrationTool {
 
                 switch (command) {
                     case "migrate":
-                        log.info("Запуск миграций...");
+                        log.info("Starting migrations.....");
                         migrationManager.runMigrations();
                         break;
 
                     case "rollback":
-                        log.info("Откат миграций...");
+                        log.info("Rollback of migrations...");
                         migrationManager.rollbackMigration();
                         break;
 
                     case "status":
-                        log.info("Проверка статуса миграций...");
+                        log.info("Checking migration status...");
                         migrationManager.printMigrationStatus();
                         break;
 
                     default:
-                        log.error("Неизвестная команда: {}. Доступные команды: migrate, rollback, status", command);
+                        log.error("Unknown command: {}. Available commands: migrate, rollback, status", command);
                         break;
                 }
             }
-            log.info("Работа с миграциями успешно завершена!");
+            log.info("Migration process successfully completed!");
         } catch (SQLException e) {
-            log.error("Ошибка при работе с базой данных: {}", e.getMessage(), e);
+            log.error("Error working with the database: {}", e.getMessage(), e);
         } catch (IllegalAccessException e) {
-            log.warn("Миграции не были запущены: {}", e.getMessage());
+            log.warn("Migrations were not started: {}", e.getMessage());
         } catch (RuntimeException e) {
-            log.error("Непредвиденная ошибка выполнения программы: {}", e.getMessage(), e);
+            log.error("Unexpected runtime error: {}", e.getMessage(), e);
         } catch (Exception e) {
-            log.error("Ошибка при выполнении миграции", e);
+            log.error("Error executing migration", e);
         }
     }
 }
