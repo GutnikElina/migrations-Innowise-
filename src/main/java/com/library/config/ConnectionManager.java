@@ -38,6 +38,9 @@ public class ConnectionManager {
         try {
             log.debug("Connecting to the database...");
             Connection connection = DriverManager.getConnection(url, username, password);
+            if (connection == null || !connection.isValid(5)) {
+                throw new SQLException("Invalid connection URL: " + url);
+            }
             log.info("Database connection established.");
             return connection;
         } catch (SQLException e) {
@@ -45,6 +48,7 @@ public class ConnectionManager {
             throw e;
         }
     }
+
 
     /**
      * Тестирует соединение с базой данных.
