@@ -31,113 +31,114 @@
 4. Сборка проекта с помощью Maven:
    ```bash
    mvn clean package
-Это создаст JAR файл со всеми зависимостями в директории `target`.
+   ```
+   Это создаст JAR файл со всеми зависимостями в директории `target`.
+   
+5. ***Установка PostgreSQL(если отсутствует) с помощью Docker***
 
-5.***Установка PostgreSQL(если отсутствует) с помощью Docker***
+   Убедитесь, что Docker Desktop запущен перед выполнением следующих шагов.
 
-Убедитесь, что Docker Desktop запущен перед выполнением следующих шагов.
-
-Выполните в терминале команду:
-```
-  docker run --name postgres-container -e POSTGRES_USER=root -e POSTGRES_PASSWORD=root -e POSTGRES_DB=migrations_db -p 5432:5432 -d postgres
-```
-Примечание: если в команде ```docker run``` укажете другие данные (логин, пароль или база данных), то придется создавать файл application.properties с вашими данными.
+   Выполните в терминале команду:
+   ```bash
+     docker run --name postgres-container -e POSTGRES_USER=root -e POSTGRES_PASSWORD=root -e POSTGRES_DB=migrations_db -p 5432:5432 -d postgres
+   ```
+   Примечание: если в команде ```docker run``` укажете другие данные (логин, пароль или база данных), то придется создавать файл application.properties с вашими данными.
 
 
-***Если PostgreSQL уже был установлен***
+   ***Если PostgreSQL уже был установлен***
 
-Замените в клонированном проекте в пакете ```resources``` файл ```application.properties``` на свои значения для открытия бд PostgreSQL:
-```
-  db.url=jdbc:postgresql://localhost:5432/{БД_ДЛЯ_ЗАПИСИ_МИГРАЦИОННЫХ_ФАЙЛОВ}
-  db.username={ВАШ_ЛОГИН}
-  db.password={ВАШ_ПАРОЛЬ}
-```
-Для запуска проекта потребуется использовать в терминале следующие команды:
-
+   Замените в клонированном проекте в пакете ```resources``` файл ```application.properties``` на свои значения для открытия бд PostgreSQL:
+   ```
+     db.url=jdbc:postgresql://localhost:5432/{БД_ДЛЯ_ЗАПИСИ_МИГРАЦИОННЫХ_ФАЙЛОВ}
+     db.username={ВАШ_ЛОГИН}
+     db.password={ВАШ_ПАРОЛЬ}
+   ```
+   
 6. **Запуск приложения**
-    Вы можете использовать команду `java -jar`, чтобы запустить проект и выполнить команды миграции.
+      
+   Вы можете использовать команду `java -jar`, чтобы запустить проект и выполнить команды миграции.
 
-Для применения всех миграций:
+   Для применения всех миграций:
 
-```bash
-    java -jar target/migrations_project-2.2-SNAPSHOT.jar migrate
- ```
+   ```bash
+       java -jar target/migrations_project-2.2-SNAPSHOT.jar migrate
+   ```
 
-Для отката последней примененной миграции:
+   Для отката последней примененной миграции:
 
-```bash
-    java -jar target/migrations_project-2.2-SNAPSHOT.jar rollback
-```
+   ```bash
+       java -jar target/migrations_project-2.2-SNAPSHOT.jar rollback
+   ```
 
-Для проверки статуса примененных миграций:
+   Для проверки статуса примененных миграций:
 
-```bash
-    java -jar target/migrations_project-2.2-SNAPSHOT.jar status
-```
-### Аргументы командной строки
+   ```bash
+       java -jar target/migrations_project-2.2-SNAPSHOT.jar status
+   ```
+   ### Аргументы командной строки
 
-Поддерживаются следующие команды:
+   Поддерживаются следующие команды:
 
-- `migrate`: Применяет все ожидающие миграции.
-- `rollback`: Откатывает последнюю примененную миграцию.
-- `status`: Показывает статус примененных миграций.
+   - `migrate`: Применяет все ожидающие миграции.
+   - `rollback`: Откатывает последнюю примененную миграцию.
+   - `status`: Показывает статус примененных миграций.
 
-Если аргументы не указаны, приложение выведет сообщение об ошибке и завершит работу.
+   Если аргументы не указаны, приложение выведет сообщение об ошибке и завершит работу.
 
-## Добавление как зависимость в другой проект (второй способ)
-Если вы хотите использовать этот проект как библиотеку в вашем собственном Java проекте, вы можете добавить его как зависимость в ваш файл `pom.xml`.
+   ## Добавление как зависимость в другой проект (второй способ)
+   Если вы хотите использовать этот проект как библиотеку в вашем собственном Java проекте, вы можете добавить его как зависимость в ваш файл `pom.xml`.
 
 1. Добавьте репозиторий
 
-Проект размещен на репозитории JitPack, поэтому добавьте определение репозитория в ваш файл `pom.xml`:
+   Проект размещен на репозитории JitPack, поэтому добавьте определение репозитория в ваш файл `pom.xml`:
 
-```xml
-<repositories>
+   ```xml
+   <repositories>
     <repository>
         <id>jitpack.io</id>
         <url>https://jitpack.io</url>
     </repository>
-</repositories>
-```
+   </repositories>
+   ```
 
 2. Добавьте зависимость
    
-```xml
-<dependency>
-    <groupId>com.github.GutnikElina</groupId>
-    <artifactId>migrations-Innowise-</artifactId>
-    <version>v2.1</version>
-</dependency>
-```
+   ```xml
+   <dependency>
+       <groupId>com.github.GutnikElina</groupId>
+       <artifactId>migrations-Innowise-</artifactId>
+       <version>v2.1</version>
+   </dependency>
+   ```
 
 3. Добавьте конфигурацию (или использование application.properties из jar файла)
 
-Добавьте в проекте в пакете ```resources``` файл ```application.properties``` свои значения для открытия PostgreSQL:
-```
-  db.url=jdbc:postgresql://localhost:5432/{БД_ДЛЯ_ЗАПИСИ_МИГРАЦИОННЫХ_ФАЙЛОВ}
-  db.username={ВАШ_ЛОГИН}
-  db.password={ВАШ_ПАРОЛЬ}
-```
-Если файл ```application.properties``` отсутствует в проекте, то значения для подключения PostgreSQL будут взяты по умолчанию из jar файла.
+   Добавьте в проекте в пакете ```resources``` файл ```application.properties``` свои значения для открытия PostgreSQL:
+   ```
+     db.url=jdbc:postgresql://localhost:5432/{БД_ДЛЯ_ЗАПИСИ_МИГРАЦИОННЫХ_ФАЙЛОВ}
+     db.username={ВАШ_ЛОГИН}
+     db.password={ВАШ_ПАРОЛЬ}
+   ```
+   Если файл ```application.properties``` отсутствует в проекте, то значения для подключения PostgreSQL будут взяты по умолчанию из jar файла.
 
 4. После чего нужно заново пересобрать ваш проект:
    ```bash
    mvn clean package
    ```
 
-## Пример использования библиотеки для управления миграциями как зависимость в другом проекте
+   ## Пример использования библиотеки для управления миграциями как зависимость в другом проекте
 
-Вы можете использовать класс MigrationTool для выполнения миграций программно. Вот пример вызова команд миграции:
-```
-import com.library.migrations.MigrationTool;
+   Вы можете использовать класс MigrationTool для выполнения миграций программно. Вот пример вызова команд миграции:
+   ```
+   import com.library.migrations.MigrationTool;
 
-public class YourApp {
-    public static void main(String[] args) {
-        try {
-            MigrationTool.executeMigration("migrate");   //"status" - для списка примененных миграций, "rollback" - для отката
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-}
-```
+   public class YourApp {
+       public static void main(String[] args) {
+           try {
+               MigrationTool.executeMigration("migrate");   //"status" - для списка примененных миграций, "rollback" - для отката
+           } catch (Exception e) {
+               e.printStackTrace();
+           }
+       }
+   }
+   ```
