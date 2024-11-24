@@ -55,7 +55,6 @@ public class MigrationFileReader {
 
         var classLoader = getClass().getClassLoader();
         var resources = classLoader.getResources(path);
-
         while (resources.hasMoreElements()) {
             var url = resources.nextElement();
             if ("jar".equals(url.getProtocol())) {
