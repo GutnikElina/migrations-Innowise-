@@ -6,7 +6,7 @@
 
     <groupId>com.library</groupId>
     <artifactId>migrations_project</artifactId>
-    <version>2.0-SNAPSHOT</version>
+    <version>2.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -17,6 +17,7 @@
         <slf4j.version>2.0.9</slf4j.version>
         <lombok.version>1.18.34</lombok.version>
         <logback.version>1.5.12</logback.version>
+        <junit.version>5.11.3</junit.version>
     </properties>
 
     <dependencies>
@@ -47,7 +48,7 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>RELEASE</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -78,6 +79,7 @@
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
+                                        <exclude>migrations/**</exclude>
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>

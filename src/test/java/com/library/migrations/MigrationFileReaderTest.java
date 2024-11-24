@@ -19,7 +19,7 @@ public class MigrationFileReaderTest {
 
     @Test
     void testReadMigrationFile_FileNotFound() {
-        assertThrows(NullPointerException.class, () -> fileReader.readMigrationFile("migrations/nonexistent.sql"),
+        assertThrows(IOException.class, () -> fileReader.readMigrationFile("migrations/nonexistent.sql"),
                 "Should throw IOException for nonexistent files!");
     }
 

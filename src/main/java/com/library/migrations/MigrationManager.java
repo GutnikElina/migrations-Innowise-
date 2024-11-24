@@ -1,7 +1,6 @@
 package com.library.migrations;
 
 import lombok.extern.slf4j.Slf4j;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.sql.Connection;
@@ -47,7 +46,7 @@ public class MigrationManager {
      * @throws IOException если возникает ошибка при применении файлов
      * @throws URISyntaxException если возникает ошибка при применении URI
      */
-    public void runMigrations() throws SQLException, IOException, URISyntaxException {
+    public void migrate() throws SQLException, IOException, URISyntaxException {
         acquireLock();
         try {
             ensureMigrationTableExists();
@@ -77,17 +76,22 @@ public class MigrationManager {
     }
 
     /**
-     * Выводит в лог статус всех миграций, примененных к базе данных.
+     * Выводит в лог статус всех миграций, примененных к базе данных. Если их
+     * нет, то выводит соответствующее сообщение об их отсутствии.
      * Каждая запись содержит название файла миграции и дату/время ее применения
      *
      * @throws SQLException если возникает ошибка при выполнении SQL-запроса
      */
-    public void printMigrationStatus() throws SQLException {
+    public void status() throws SQLException {
         String query = "SELECT file_name, applied_at FROM " + MIGRATION_TABLE + " ORDER BY applied_at DESC";
         try (var stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
-            log.info("Migration status:");
-            while (rs.next()) {
-                log.info("Migration: {}; applied at: {}", rs.getString("file_name"), rs.getTimestamp("applied_at"));
+            if (!rs.isBeforeFirst()) {
+                log.info("No migrations have been applied yet.");
+            } else {
+                log.info("Migration status:");
+                while (rs.next()) {
+                    log.info("Migration: {}; applied at: {}", rs.getString("file_name"), rs.getTimestamp("applied_at"));
+                }
             }
         }
     }
@@ -99,7 +103,7 @@ public class MigrationManager {
      *
      * @throws SQLException если возникает ошибка при выполнении SQL-запроса или отката
      */
-    public void rollbackMigration() throws SQLException {
+    public void rollback() throws SQLException {
         String lastAppliedMigration = getLastAppliedMigration();
         if (lastAppliedMigration == null) {
             log.warn("No migrations to roll back.");

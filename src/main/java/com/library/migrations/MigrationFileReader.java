@@ -28,12 +28,13 @@ public class MigrationFileReader {
      * @throws IOException если возникает ошибка при чтении файла
      */
     public String readMigrationFile(String filePath) throws IOException {
-        try (InputStream in = getClass().getClassLoader().getResourceAsStream(filePath);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-            if (in == null) {
-                log.error("Migration file not found: {}", filePath);
-                throw new IOException("Migration file not found: " + filePath);
-            }
+        InputStream in = getClass().getClassLoader().getResourceAsStream(filePath);
+        if (in == null) {
+            log.error("Migration file not found: {}", filePath);
+            throw new IOException("Migration file not found: " + filePath);
+        }
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
             return reader.lines().collect(Collectors.joining("\n"));
         } catch (IOException e) {
             log.error("Error reading migration file: {}", filePath, e);
@@ -88,8 +89,17 @@ public class MigrationFileReader {
 
 
     private int compareVersions(String f1, String f2) {
-        int version1 = Integer.parseInt(f1.split("__")[0].substring(1));
-        int version2 = Integer.parseInt(f2.split("__")[0].substring(1));
-        return Integer.compare(version1, version2);
+        try {
+            String[] parts1 = f1.split("__");
+            String[] parts2 = f2.split("__");
+            if (parts1.length == 0 || parts2.length == 0) {
+                throw new IllegalArgumentException("Invalid migration file format: " + f1 + " or " + f2);
+            }
+            int version1 = Integer.parseInt(parts1[0].substring(1));
+            int version2 = Integer.parseInt(parts2[0].substring(1));
+            return Integer.compare(version1, version2);
+        } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+            throw new IllegalArgumentException("Invalid version format in migration files: " + f1 + ", " + f2, e);
+        }
     }
 }
