@@ -32,7 +32,7 @@ public class ConnectionManager {
      * Получает соединение с базой данных.
      *
      * @return объект {@link Connection} для взаимодействия с базой данных.
-     * @throws SQLException если не удалось установить соединение с базой данных.
+     * @throws SQLException если не удалось установить соединение с базой данных
      */
     public static Connection getConnection() throws SQLException {
         log.debug("Connecting to the database...");
