@@ -43,7 +43,9 @@ public class MigrationManager {
      * Запускает все миграции, проверяя, были ли они уже применены.
      * Обрабатывает создание таблицы миграции и выполнение миграций для каждого файла
      *
-     * @throws Exception если возникает ошибка при применении миграций
+     * @throws SQLException если возникает ошибка с базой данных
+     * @throws IOException если возникает ошибка при применении файлов
+     * @throws URISyntaxException если возникает ошибка при применении URI
      */
     public void runMigrations() throws SQLException, IOException, URISyntaxException {
         acquireLock();
