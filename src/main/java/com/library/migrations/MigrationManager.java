@@ -3,6 +3,7 @@ package com.library.migrations;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -44,7 +45,7 @@ public class MigrationManager {
      *
      * @throws Exception если возникает ошибка при применении миграций
      */
-    public void runMigrations() throws Exception {
+    public void runMigrations() throws SQLException, IOException, URISyntaxException {
         acquireLock();
         try {
             ensureMigrationTableExists();
@@ -64,6 +65,9 @@ public class MigrationManager {
             throw e;
         } catch (IOException e) {
             log.error("Error reading migration file: {}", e.getMessage(), e);
+            throw e;
+        } catch (URISyntaxException e) {
+            log.error("Error with parsing URI: {}", e.getMessage(), e);
             throw e;
         } finally {
             releaseLock();
@@ -113,15 +117,13 @@ public class MigrationManager {
             String deleteSql = "DELETE FROM " + MIGRATION_TABLE + " WHERE file_name = ?";
             try (var pstmt = connection.prepareStatement(deleteSql)) {
                 pstmt.setString(1, lastAppliedMigration);
+                log.debug("Deleting migration file...");
                 pstmt.executeUpdate();
             }
             log.info("Rollback of the last migration performed: {}", lastAppliedMigration);
-        } catch (IOException e) {
-            log.error("Rollback file for migration {} not found: {}", lastAppliedMigration, rollbackFilePath, e);
-            throw new SQLException("Couldn't find rollback file: " + rollbackFilePath, e);
-        } catch (SQLException e) {
-            log.error("Error executing rollback for migration {}: {}", lastAppliedMigration, rollbackFilePath, e);
-            throw e;
+        } catch (IOException | SQLException e) {
+            log.error("Error during rollback: {}", e.getMessage(), e);
+            throw new SQLException("Rollback failed for migration " + lastAppliedMigration, e);
         }
     }
 
@@ -132,6 +134,7 @@ public class MigrationManager {
 
     private boolean isMigrationApplied(String fileName) throws SQLException {
         String query = "SELECT COUNT(*) FROM " + MIGRATION_TABLE + " WHERE file_name = '" + fileName + "'";
+        log.debug("Executing applied migrations...");
         try (var stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(query)) {
             rs.next();
@@ -141,7 +144,7 @@ public class MigrationManager {
         }
     }
 
-    private void applyMigration(String fileName, String sql) throws Exception {
+    private void applyMigration(String fileName, String sql) throws SQLException {
         try {
             executor.execute(sql);
             executor.logMigration(fileName);
@@ -149,13 +152,10 @@ public class MigrationManager {
         } catch (SQLException e) {
             log.error("Failed to apply migration: {}", fileName, e);
             throw e;
-        } catch (NullPointerException e) {
-            log.error("Attempting to rollback migration: {}. Object was null.", fileName, e);
-            throw e;
         }
     }
 
-    private void acquireLock() throws SQLException {
+    private void acquireLock() throws SQLException, IllegalStateException {
         String tryLockSql = "SELECT pg_try_advisory_lock(1)";
         //pg_try_advisory_lock(1) - получает исключительную блокировку на уровне сеанса, если это возможно
         //true - если блокировка захвачена
@@ -173,9 +173,9 @@ public class MigrationManager {
 
     private void releaseLock() throws SQLException {
         String unlockSql = "SELECT pg_advisory_unlock(1)";
-        try (var stmt = connection.createStatement()) {
+        try {
             log.info("Starting attempt to release lock...");
-            stmt.execute(unlockSql);
+            executor.execute(unlockSql);
             log.info("Lock successfully released.");
         } catch (SQLException e) {
             log.error("Error releasing lock: {}", e.getMessage(), e);

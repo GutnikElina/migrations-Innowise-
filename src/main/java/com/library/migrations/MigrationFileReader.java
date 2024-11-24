@@ -5,10 +5,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
 /**
@@ -44,24 +46,46 @@ public class MigrationFileReader {
      *
      * @param path путь к каталогу с миграциями
      * @return список имен файлов миграций
-     * @throws Exception если возникает ошибка при поиске файлов
+     * @throws IOException если возникает ошибка при поиске файлов
+     * @throws URISyntaxException если возникает ошибка при работе с URI
      */
-    public List<String> findMigrationFiles(String path) throws Exception {
-        var resources = getClass().getClassLoader().getResources(path);
+    public List<String> findMigrationFiles(String path) throws IOException, URISyntaxException {
         List<String> migrationFiles = new ArrayList<>();
+
+        var classLoader = getClass().getClassLoader();
+        var resources = classLoader.getResources(path);
 
         while (resources.hasMoreElements()) {
             var url = resources.nextElement();
-            try (var files = Files.walk(Paths.get(url.toURI()))) {
-                migrationFiles.addAll(files.filter(Files::isRegularFile)
-                        .map(file -> file.getFileName().toString())
-                        .filter(f -> f.matches("V\\d+.*\\.sql")).toList());
+            if ("jar".equals(url.getProtocol())) {
+                //для JAR-файлов
+                String jarPath = url.getPath().substring(5, url.getPath().indexOf("!"));
+                try (var jarFile = new JarFile(jarPath)) {
+                    var entries = jarFile.entries();
+                    while (entries.hasMoreElements()) {
+                        var entry = entries.nextElement();
+                        String entryName = entry.getName();
+                        if (entryName.startsWith(path) && entryName.endsWith(".sql") && entryName.matches(".*/V\\d+.*\\.sql")) {
+                            migrationFiles.add(entryName.substring(path.length() + 1));
+                        }
+                    }
+                }
+            } else {
+                //для файловой системы (например, в процессе разработки)
+                try (var files = Files.walk(Paths.get(url.toURI()))) {
+                    migrationFiles.addAll(
+                            files.filter(Files::isRegularFile)
+                                    .map(file -> file.getFileName().toString())
+                                    .filter(f -> f.matches("V\\d+.*\\.sql"))
+                                    .toList());
+                }
             }
         }
         migrationFiles.sort(this::compareVersions);
         log.debug("Found {} migration files.", migrationFiles.size());
         return migrationFiles;
     }
+
 
     private int compareVersions(String f1, String f2) {
         int version1 = Integer.parseInt(f1.split("__")[0].substring(1));

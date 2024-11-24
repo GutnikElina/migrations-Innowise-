@@ -35,20 +35,32 @@ public class ConnectionManager {
      * @throws SQLException если не удалось установить соединение с базой данных.
      */
     public static Connection getConnection() throws SQLException {
+        log.debug("Connecting to the database...");
         try {
-            log.debug("Connecting to the database...");
             Connection connection = DriverManager.getConnection(url, username, password);
-            if (connection == null || !connection.isValid(5)) {
-                throw new SQLException("Invalid connection URL: " + url);
+            if (isValidConnection(connection)) {
+                log.info("Database connection established successfully.");
+                return connection;
+            } else {
+                log.warn("Database connection failed.");
+                throw new SQLException("Invalid database connection.");
             }
-            log.info("Database connection established.");
-            return connection;
         } catch (SQLException e) {
             log.error("Connection error: URL={}; user={}", url, username, e);
             throw e;
         }
     }
 
+    /**
+     * Проверяет, является ли соединение валидным.
+     *
+     * @param connection объект {@link Connection}, который нужно проверить.
+     * @return true, если соединение валидно; false — если нет.
+     * @throws SQLException если возникли проблемы при проверке валидности соединения.
+     */
+    private static boolean isValidConnection(Connection connection) throws SQLException {
+        return connection != null && connection.isValid(5);
+    }
 
     /**
      * Тестирует соединение с базой данных.

@@ -27,6 +27,7 @@ public class MigrationExecutor {
         boolean initialAutoCommit = connection.getAutoCommit();
         try (var stmt = connection.createStatement()) {
             connection.setAutoCommit(false);
+            log.debug("Executing SQL query...");
             stmt.execute(sql);
             connection.commit();
             log.info("SQL query executed successfully: {}", sql);
@@ -49,6 +50,7 @@ public class MigrationExecutor {
         String logSql = "INSERT INTO " + MIGRATION_TABLE + " (file_name) VALUES (?)";
         try (var pstmt = connection.prepareStatement(logSql)) {
             pstmt.setString(1, migrationFileName);
+            log.debug("Inserting migration file...");
             pstmt.executeUpdate();
             log.info("Migration {} recorded in the database", migrationFileName);
         }

@@ -17,12 +17,13 @@ public class PropertiesUtils {
     static {
         try {
             String propertiesPath = "application.properties";
+            log.debug("Loading configuration from resources...");
             try (InputStream input = PropertiesUtils.class.getClassLoader().getResourceAsStream(propertiesPath)) {
                 if (input == null) {
                     throw new IOException("Configuration file not found in resources: " + propertiesPath);
                 }
                 properties.load(input);
-                log.info("Configuration loaded from resource: {}", propertiesPath);
+                log.info("Configuration loaded from resources: {}", propertiesPath);
             }
         } catch (IOException e) {
             log.error("Configuration loading error: ", e);
